@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  ml-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sahai-ml-training
+    env_file:
+      - ../../ENV/.env
