@@ -9,9 +9,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from unified root ENV
-root_dir = Path(__file__).resolve().parents[3]
-env_path = root_dir / "ENV" / ".env"
-load_dotenv(dotenv_path=env_path)
+env_path = None
+curr_dir = Path(__file__).resolve().parent
+for _ in range(5):
+    check_path = curr_dir / "ENV" / ".env"
+    if check_path.exists():
+        env_path = check_path
+        break
+    if curr_dir == curr_dir.parent:
+        break
+    curr_dir = curr_dir.parent
+
+if env_path:
+    load_dotenv(dotenv_path=env_path)
+else:
+    load_dotenv()
 
 # Load credentials from env
 PG_HOST = os.environ.get("PG_HOST")
