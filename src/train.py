@@ -3,25 +3,38 @@ import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import numpy as np
+from utils.logger import logger
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from unified root ENV
+root_dir = Path(__file__).resolve().parents[3]
+env_path = root_dir / "ENV" / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Load credentials from env
-PG_HOST = os.environ.get("PG_HOST", "localhost")
-PG_PORT = int(os.environ.get("PG_PORT", 5432))
-PG_USER = os.environ.get("PG_USER", "sahai_user")
-PG_PASSWORD = os.environ.get("PG_PASSWORD", "sahai_password")
-PG_DATABASE = os.environ.get("PG_DATABASE", "sahai_db")
+PG_HOST = os.environ.get("PG_HOST")
+PG_PORT = int(os.environ.get("PG_PORT", 5432)) if os.environ.get("PG_PORT") else None
+PG_USER = os.environ.get("PG_USER")
+PG_PASSWORD = os.environ.get("PG_PASSWORD")
+PG_DATABASE = os.environ.get("PG_DATABASE")
+PG_SSL = os.environ.get("PG_SSL", "false").lower() == "true"
 
 def connect_postgres():
-    return psycopg2.connect(
-        host=PG_HOST,
-        port=PG_PORT,
-        user=PG_USER,
-        password=PG_PASSWORD,
-        dbname=PG_DATABASE
-    )
+    kwargs = {
+        "host": PG_HOST,
+        "port": PG_PORT,
+        "user": PG_USER,
+        "password": PG_PASSWORD,
+        "dbname": PG_DATABASE
+    }
+    if PG_SSL:
+        kwargs["sslmode"] = "require"
+    return psycopg2.connect(**kwargs)
 
 def train_correlation_model():
-    print("[ML Train] Starting correlation model training...")
+    logger.info("Starting correlation model training...")
     conn = None
     try:
         conn = connect_postgres()
@@ -38,7 +51,7 @@ def train_correlation_model():
 
         if len(records) < 5:
             # Seed mock data for training in case database is empty/small for demo
-            print("[ML Train] Database too small. Injecting mock records for training...")
+            logger.info("Database too small. Injecting mock records for training...")
             mock_records = []
             users = [f"user_{i}" for i in range(10)]
             concepts = [
@@ -140,10 +153,10 @@ def train_correlation_model():
                         )
                         
             conn.commit()
-            print("[ML Train] All correlations committed to PostgreSQL successfully.")
+            logger.info("All correlations committed to PostgreSQL successfully.")
             
     except Exception as e:
-        print(f"[ML Train] Error during training: {e}")
+        logger.error(f"Error during training: {e}")
         if conn:
             conn.rollback()
     finally:
