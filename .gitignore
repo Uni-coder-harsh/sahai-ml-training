@@ -31,4 +31,6 @@ logs/
 *.ntvs*
 *.njsproj
 *.sln
-*.swp       
+*.swp
+data/
+models/
